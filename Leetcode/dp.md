@@ -442,3 +442,120 @@ public:
     }
 };
 ```
+## 完全背包
+T322 零钱兑换
+- 一维：
+```C++
+class Solution {
+public:
+    int coinChange(vector<int>& coins, int amount) {
+        // dp[j] 表示凑成金额 j 的最少硬币数
+        vector<int> dp(amount + 1, amount + 1); // 初始化为 amount+1 表示不可达
+        dp[0] = 0;
+        for (int coin : coins) {
+            // 完全背包：内层正序遍历
+            for (int j = coin; j <= amount; j++) {
+                dp[j] = min(dp[j], dp[j - coin] + 1);
+            }
+        }
+        
+        return dp[amount] == amount + 1 ? -1 : dp[amount];
+    }
+};
+```
+> - 0-1 背包：倒序保证 dp[j-w] 是上一轮（未选当前物品）的状态，避免重复选。
+> - 完全背包：正序允许 dp[j-w] 已经被当前物品更新过，从而实现重复选。
+
+- 二维：
+```C++
+class Solution {
+public:
+    int coinChange(vector<int>& coins, int amount) {
+        int n = coins.size();
+        const int INF = amount + 1;
+        // dp[i][j]：前 i 种硬币凑成金额 j 的最少硬币数
+        vector<vector<int>> dp(n + 1, vector<int>(amount + 1, INF));
+        dp[0][0] = 0;
+        // 注意：dp[i][0] 也应该为 0，但初始化为 INF 后需要手动设置
+        for (int i = 0; i <= n; i++) dp[i][0] = 0;
+        
+        for (int i = 1; i <= n; i++) {
+            int coin = coins[i - 1];
+            for (int j = 0; j <= amount; j++) {
+                // 不使用第 i 种硬币
+                dp[i][j] = dp[i - 1][j];
+                // 使用第 i 种硬币（前提容量够）
+                if (j >= coin) {
+                    dp[i][j] = min(dp[i][j], dp[i][j - coin] + 1);
+                }
+            }
+        }
+        
+        return dp[n][amount] == INF ? -1 : dp[n][amount];
+    }
+};
+```
+**核心区别：**
+>
+- 0-1背包：选完就不许再选 → 退回上一行（i-1）
+```C++
+ dp[i][j] = max(dp[i-1][j], dp[i-1][j-w] + v);
+//                              ↑
+//                         上一行 i-1
+```
+- 完全背包：选完还能继续选 → 停留在当前行（i）
+```C++
+dp[i][j] = max(dp[i-1][j], dp[i][j-w] + v);
+//                              ↑
+//                         当前行 i
+```
+
+T1449 数位成本和为目标值的最大数字
+```C++
+class Solution {
+public:
+    string largestNumber(vector<int>& cost, int target) {
+        const int INF = -1e9;  // 表示不可达
+        vector<int> dp(target + 1, INF);
+        dp[0] = 0;  // 成本为 0 时，位数为 0
+
+        // 完全背包：求最大位数
+        for (int d = 1; d <= 9; d++) {
+            int c = cost[d - 1];
+            for (int j = c; j <= target; j++) {
+                if (dp[j - c] != INF) {
+                    dp[j] = max(dp[j], dp[j - c] + 1);
+                }
+            }
+        }
+
+        // 无法凑出 target
+        if (dp[target] < 0) return "0";
+
+        // 贪心构造最大数字
+        string ans;
+        int cur = target;
+        while (cur > 0) {
+            // 从大到小尝试数字 9 到 1
+            for (int d = 9; d >= 1; d--) {
+                int c = cost[d - 1];
+                if (cur >= c && dp[cur - c] != INF && dp[cur] == dp[cur - c] + 1) {
+                    ans += to_string(d);
+                    cur -= c;
+                    break;  // 选完一个数字就跳出，继续构造下一位
+                }
+            }
+        }
+        return ans;
+    }
+};
+```
+**核心要点**
+>- unordered_map 会覆盖相同成本
+多个数字可能有相同的成本（例如数字2和7的成本都是2），但 p[cost[i]] = i+1 会让后面的覆盖前面的，丢失了数字信息。
+> - 先用完全背包求出最大位数，如果 dp[target] < 0，说明无法凑出，返回 "0"
+> - 贪心构造最大数字：检查是否满足条件：
+cur >= c：剩余成本够用
+dp[cur - c] != INF：剩余成本 cur - c **能凑出**dp[cur] == dp[cur - c] + 1：选了 d 之后，总位数不减少（这是最关键的条件）
+如果满足，就把 d 追加到 ans，cur -= c，然后跳出尝试循环，进入下一轮
+
