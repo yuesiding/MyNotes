@@ -1,4 +1,5 @@
-## 爬楼梯系列
+## 一、入门dp
+### 爬楼梯系列
 **T70 爬楼梯**
 > 为要解决的问题都是「从 0 爬到 i」，所以定义 dfs(i) 表示从 0 爬到 i 有多少种不同的方法（或者说爬 i 个台阶的方案数）。
 >分类讨论：
@@ -73,7 +74,7 @@
 > 外层循环遍历物品的话，一个物品遍历过就不会再遍历到，所以强调的是物品的个数而不是位置，类似组合问题。
 内层循环遍历物品的话，同一个物品会被多次遍历到，可以是上一轮循环选了物品 A，当前这轮循环选了物品 B，也可以是上一轮循环选了物品 B，当前这轮循环选了物品 A，这是不同的排列。  
 
-## 打家劫舍
+### 打家劫舍
 **T198 打家劫舍**
 > dp[i]：表示考虑到第i间房子（下标 0∼i）时，能偷到的最高总金额。
 不偷第i间房子：既然不偷第i间，那最大收益就完全等于前 i−1 间房子的最高收益。→ dp[i - 1]
@@ -100,7 +101,7 @@
 ```
 *变形：T740 删除并获得点数*
 
-## 最大子数组和：
+### 最大子数组和：
 > 定义状态 f[i] 表示以 a[i] 结尾的最大子数组和，不和 i 左边拼起来就是 f[i]=a[i]，和 i 左边拼起来就是 f[i]=f[i−1]+a[i]，取最大值就得到了状态转移方程 f[i]=max(f[i−1],0)+a[i]，答案为 max(f)。这个做法也叫做 **Kadane 算法**
 
 T53 最大子数组和
@@ -193,7 +194,7 @@ public:
 };
 ```
 
-## 网格图dp
+## 二、网格图dp
 
 T64
 > 具体来说，f[i+1][j+1]表示从左上角到第 i 行第 j 列这个格子（记作 (i,j)）的最小价值和
@@ -305,10 +306,10 @@ public:
     }
 };
 ```
+## 三、背包问题
+### 0-1背包
 
-## 0-1背包
-
-### 方案型
+#### 方案型
 > 经典问题描述
 你有一个容量为 W 的背包，和 n 个物品。第 i 个物品的重量是 w[i]，价值是 v[i]。
 每个物品只能选一次（选或不选，所以叫 0-1 背包）。
@@ -409,7 +410,7 @@ T1049 最后一块石头的重量
 >> **定义：** dp[i][j] = 从前 i 块石头中选，总重量不超过 j 时，能获得的最大总重量。
 
 
-### 布尔型dp
+#### 布尔型dp
 T3180 执行操作可获得的最大总奖励
 > dp[s] 表示能否达到总奖励 s。
 初始 dp[0] = true（总奖励为 0 是起点）
@@ -442,7 +443,7 @@ public:
     }
 };
 ```
-## 完全背包
+### 完全背包
 T322 零钱兑换
 - 一维：
 ```C++
@@ -559,3 +560,173 @@ cur >= c：剩余成本够用
 dp[cur - c] != INF：剩余成本 cur - c **能凑出**dp[cur] == dp[cur - c] + 1：选了 d 之后，总位数不减少（这是最关键的条件）
 如果满足，就把 d 追加到 ans，cur -= c，然后跳出尝试循环，进入下一轮
 
+### 多重背包
+> 物品可以重复选，但有个数限制。
+T2585 获取分数的多重方法
+```C++
+class Solution {
+public:
+    int waysToReachTarget(int target, vector<vector<int>>& types) {
+        int n=types.size();
+        const int MOD=1000000007;
+        vector<vector<long long >>dp(n+1,vector<long long>(target+1,0));
+        dp[0][0]=1;
+        for(int i=0;i<n;i++){
+            int score=types[i][1];
+            int count=types[i][0];
+            for(int j=0;j<=target;j++){
+                dp[i + 1][j] = 0;// 第 i 种物品,选 0 个,即不选
+                // 枚举选 k 道题，k 从 0 到 count，且 k*score <= j
+                for (int k=0;k<=count&&k*score<=j;k++) {
+                    dp[i + 1][j] = (dp[i + 1][j] + dp[i][j -k * score])%MOD;
+                }
+            }
+        }
+        return dp[n][target];
+    }
+};
+```
+
+### 分组背包
+> 同一组内的物品至多/恰好选一个
+```C++
+class Solution {
+public:
+    int numRollsToTarget(int n, int k, int target) {
+        const int MOD=1000000007;
+        if (target<n||target>n*k) return 0;
+        vector<vector<long long>>dp(n+1,vector<long long>(target+1,0));
+        dp[0][0]=1;
+        for(int i=0;i<n;i++){
+            for(int j=0;j<target+1;j++){
+                for(int w=1;w<=k;w++){
+                    // 第 i+1 个骰子掷出 ,且必须投掷出去，没有不投掷这种选项
+                    if(j>=w) dp[i+1][j]=(dp[i+1][j]+dp[i][j-w])%MOD;
+                }
+            }
+        }
+        return dp[n][target]%MOD;
+    }
+};
+```
+
+## 四、经典线性dp
+### 最长公共子序列（LCS）
+T1143 最长公共子序列
+- 如果 s[i] == t[j]：可以配对，**f[i+1][j+1] = f[i][j] + 1**。
+
+- 如果 s[i] != t[j]：不能配对，需要另想办法。
+- - 情况 A：**s[i] 不在 LCS 中**
+也就是说，我们放弃 s[i]，只用 s 的前 i 个字符（s[0..i-1]）和 t 的前 j+1 个字符（t[0..j]）;此时 LCS 长度为 **f[i][j+1]**。
+
+- - 情况 B：**t[j] 不在 LCS 中**
+也就是说，我们放弃 t[j]，只用 s 的前 i+1 个字符（s[0..i]）和 t 的前 j 个字符（t[0..j-1]）;此时 LCS 长度为 **f[i+1][j]**。
+
+```C++
+class Solution {
+public:
+    int longestCommonSubsequence(string s, string t) {
+        int n = s.size(), m = t.size();
+        vector f(n + 1, vector<int>(m + 1));
+        //f[i][j] = s 的前 i 个字符和 t 的前 j 个字符的最长公共子序列长度。
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                f[i + 1][j + 1] = s[i] == t[j] ? f[i][j] + 1 :
+                                  max(f[i][j + 1], f[i + 1][j]);
+            }
+        }
+        return f[n][m];
+    }
+};
+```
+
+T72 编辑距离
+|操作|含义|转移|代价|
+|---|---|---|---|
+替换|把 word1[i-1] 替换成 word2[j-1]	|dp[i-1][j-1] + 1	|+1
+删除|删除 word1[i-1]|dp[i-1][j] + 1	|+1
+插入|在 word1 末尾插入 word2[j-1]|dp[i][j-1] + 1	|+1
+
+T115 不同的子序列
+```C++
+class Solution {
+public:
+    int numDistinct(string s, string t) {
+        int n1=s.length(),n2=t.length();
+        if(n2>n1) return 0;//剪枝优化操作！！！很重要，不然可能会被卡
+        vector<vector<unsigned>>dp(n2+1,vector<unsigned>(n1+1,0));
+        // 用无符号数主要是防止溢出
+        for (int j=0;j<=n1;j++){
+            dp[0][j]=1;
+        }
+        for(int i=0;i<n2;i++){
+            for(int j=0;j<n1;j++){
+                if(t[i]!=s[j])dp[i+1][j+1]=dp[i+1][j];
+                else dp[i+1][j+1]=dp[i][j]+dp[i+1][j];
+            }
+        }
+        return (int)dp[n2][n1];
+    }
+};
+```
+> **当 t[i] == s[j] 时：**
+> 使用 s[j] 匹配 t[i]：方案数为 dp[i][j]（t 的前 i 个字符和 s 的前 j 个字符已经匹配的方案数）。
+不使用 s[j] 匹配 t[i]：方案数为 dp[i+1][j]（t 的前 i+1 个字符和 s 的前 j 个字符匹配的方案数，即跳过 s[j]）
+> dp[i+1][j+1]=dp[i][j]+dp[i+1][j];
+
+T1458 两个子序列的最大点积
+- 如何表示非空：dp[i+1][j+1] = max(dp[i+1][j+1],w+max(0,dp[i][j]));
+
+```C++
+class Solution {
+public:
+    int maxDotProduct(vector<int>& nums1, vector<int>& nums2) {
+        int n1=nums1.size(),n2=nums2.size();
+        vector<vector<int>>dp(n1+1,vector<int>(n2+1,-1e9));
+        for(int i=0;i<n1;i++){
+            for(int j=0;j<n2;j++){
+                int w=nums1[i]*nums2[j];
+                dp[i+1][j+1]=max(dp[i][j+1],dp[i+1][j]);
+               dp[i+1][j+1] = max(dp[i+1][j+1],w+max(0,dp[i][j]));
+                
+            }
+        }
+        return dp[n1][n2];
+    }
+};
+```
+> *为什么不选时不用考虑dp[i][j]? :*
+- nums1[i] 不选，nums2[j] 可选可不选	只用 nums1[0..i-1] 和 nums2[0..j]	dp[i][j+1]
+- nums2[j] 不选，nums1[i] 可选可不选	只用 nums1[0..i] 和 nums2[0..j-1]	dp[i+1][j]
+- 两个都不选	只用 nums1[0..i-1] 和 nums2[0..j-1]	dp[i][j]
+- 关键：情况 ③ 是情况 ① 和 ② 的子集（因为情况 ① 允许 nums2[j] 参与，情况 ② 允许 nums1[i] 参与，都比情况 ③ 更宽松）。
+- 由于 DP 的单调性，更宽松的情况不会更差，所以情况 ③ 被 ① 和 ② 自动覆盖，不需要单独写。
+
+### 最长递增子序列（LIS）
+T300 最长递增子序列
+
+**问：什么样的题目适合「选或不选」，什么样的题目适合「枚举选哪个」？**
+
+> 答：我分成两类问题：
+> - 相邻**无关**子序列问题（比如 0-1 背包），适合**选或不选**。每个元素互相独立，只需依次考虑每个元素选或不选。
+> - 相邻**相关**子序列问题（比如本题），适合**枚举选哪个**。我们需要知道子序列中的相邻两个数的关系。对于本题来说，枚举 nums[i] 必选，然后枚举前一个必选的数，方便比大小。
+
+```C++
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> f(n);                     // f[i] 表示以 nums[i] 结尾的 LIS 长度
+        for (int i = 0; i < n; i++) {
+            f[i] = 0;                         // 初始化，至少包含 nums[i] 自身
+            for (int j = 0; j < i; j++) {     // 检查 i 之前的所有元素
+                if (nums[j] < nums[i]) {      // 如果 nums[j] 可以接在 nums[i] 前面
+                    f[i] = max(f[i], f[j]);   // 取 f[j] 的最大值
+                }
+            }
+            f[i]++;                           // 加上 nums[i] 自身，长度 +1
+        }
+        return ranges::max(f);                // 返回所有 f[i] 中的最大值
+    }
+};
+```
